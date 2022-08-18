@@ -1,6 +1,8 @@
 import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isValidObjectId, Model } from 'mongoose';
+import { ConfigService } from '@nestjs/config';
+
 import { CreatePokemonDto } from './dto/create-pokemon.dto';
 import { UpdatePokemonDto } from './dto/update-pokemon.dto';
 import { Pokemon } from './entities/pokemon.entity';
@@ -8,11 +10,16 @@ import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Injectable()
 export class PokemonService {
+ 
+  private _default_limited:number;
 
   constructor(
     @InjectModel(Pokemon.name)
-    private readonly _pokemonModel: Model<Pokemon>
-    ){}
+    private readonly _pokemonModel: Model<Pokemon>,
+    private readonly _configService: ConfigService
+    ){
+      this._default_limited = this._configService.get<number>('default_limit');
+    }
 
 
   async create(createPokemonDto: CreatePokemonDto) {
@@ -29,7 +36,7 @@ export class PokemonService {
   }
 
   async findAll(paginationDto:PaginationDto) {
-    const {limit=10,offset=0} = paginationDto;
+    const {limit=this._default_limited,offset=0} = paginationDto;
     return this._pokemonModel.find()
     .limit(limit)
     .skip(offset)
